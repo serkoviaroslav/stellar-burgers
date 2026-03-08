@@ -5,7 +5,10 @@ import { TIngredient } from '@utils-types';
 import { Preloader } from '../ui/preloader';
 import { OrderInfoUI } from '../ui/order-info';
 import { useDispatch, useSelector } from '../../services/store';
-import { selectIngredients } from '../../services/slices/ingredientsSlice';
+import {
+  selectIngredients,
+  fetchIngredients
+} from '../../services/slices/ingredientsSlice';
 import {
   clearCurrentOrder,
   fetchOrderByNumber,
@@ -26,6 +29,10 @@ export const OrderInfo: FC = () => {
   const orderNumber = Number(number);
 
   useEffect(() => {
+    if (!ingredients.length) {
+      dispatch(fetchIngredients());
+    }
+
     if (!Number.isNaN(orderNumber)) {
       dispatch(fetchOrderByNumber(orderNumber));
     }
