@@ -1,10 +1,30 @@
 import { setCookie, getCookie } from './cookie';
-import { TIngredient, TOrder, TOrdersData, TUser } from './types';
+import { TIngredient, TOrder, TUser } from './types';
 
-const URL = process.env.BURGER_API_URL;
+const DEFAULT_API_URL = 'https://norma.education-services.ru/api';
+const URL = process.env.BURGER_API_URL || DEFAULT_API_URL;
 
-const checkResponse = <T>(res: Response): Promise<T> =>
-  res.ok ? res.json() : res.json().then((err) => Promise.reject(err));
+const parseJson = async <T>(res: Response): Promise<T> => {
+  const text = await res.text();
+
+  try {
+    return JSON.parse(text) as T;
+  } catch {
+    return Promise.reject({
+      message: text || `HTTP ${res.status}`
+    });
+  }
+};
+
+const checkResponse = async <T>(res: Response): Promise<T> => {
+  const data = await parseJson<T>(res);
+
+  if (res.ok) {
+    return data;
+  }
+
+  return Promise.reject(data);
+};
 
 type TServerResponse<T> = {
   success: boolean;
@@ -30,8 +50,10 @@ export const refreshToken = (): Promise<TRefreshResponse> =>
       if (!refreshData.success) {
         return Promise.reject(refreshData);
       }
+
       localStorage.setItem('refreshToken', refreshData.refreshToken);
       setCookie('accessToken', refreshData.accessToken);
+
       return refreshData;
     });
 
@@ -41,19 +63,23 @@ export const fetchWithRefresh = async <T>(
 ) => {
   try {
     const res = await fetch(url, options);
+
     return await checkResponse<T>(res);
   } catch (err) {
-    if ((err as { message: string }).message === 'jwt expired') {
+    if ((err as { message?: string }).message === 'jwt expired') {
       const refreshData = await refreshToken();
+
       if (options.headers) {
-        (options.headers as { [key: string]: string }).authorization =
+        (options.headers as Record<string, string>).authorization =
           refreshData.accessToken;
       }
+
       const res = await fetch(url, options);
+
       return await checkResponse<T>(res);
-    } else {
-      return Promise.reject(err);
     }
+
+    return Promise.reject(err);
   }
 };
 
@@ -67,23 +93,35 @@ type TFeedsResponse = TServerResponse<{
   totalToday: number;
 }>;
 
-type TOrdersResponse = TServerResponse<{
-  data: TOrder[];
-}>;
-
 export const getIngredientsApi = () =>
-  fetch(`${URL}/ingredients`)
+  fetch(`${URL}/ingredients`, {
+    cache: 'no-store',
+    headers: {
+      'Cache-Control': 'no-store'
+    }
+  })
     .then((res) => checkResponse<TIngredientsResponse>(res))
     .then((data) => {
-      if (data?.success) return data.data;
+      if (data.success) {
+        return data.data;
+      }
+
       return Promise.reject(data);
     });
 
 export const getFeedsApi = () =>
-  fetch(`${URL}/orders/all`)
+  fetch(`${URL}/orders/all`, {
+    cache: 'no-store',
+    headers: {
+      'Cache-Control': 'no-store'
+    }
+  })
     .then((res) => checkResponse<TFeedsResponse>(res))
     .then((data) => {
-      if (data?.success) return data;
+      if (data.success) {
+        return data;
+      }
+
       return Promise.reject(data);
     });
 
@@ -95,7 +133,10 @@ export const getOrdersApi = () =>
       authorization: getCookie('accessToken')
     } as HeadersInit
   }).then((data) => {
-    if (data?.success) return data.orders;
+    if (data.success) {
+      return data.orders;
+    }
+
     return Promise.reject(data);
   });
 
@@ -132,9 +173,12 @@ export const orderBurgerApi = (data: string[]) =>
     body: JSON.stringify({
       ingredients: data
     })
-  }).then((data) => {
-    if (data?.success) return data;
-    return Promise.reject(data);
+  }).then((responseData) => {
+    if (responseData.success) {
+      return responseData;
+    }
+
+    return Promise.reject(responseData);
   });
 
 type TOrderResponse = TServerResponse<{
@@ -144,8 +188,10 @@ type TOrderResponse = TServerResponse<{
 export const getOrderByNumberApi = (number: number) =>
   fetch(`${URL}/orders/${number}`, {
     method: 'GET',
+    cache: 'no-store',
     headers: {
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
+      'Cache-Control': 'no-store'
     }
   }).then((res) => checkResponse<TOrderResponse>(res));
 
@@ -170,9 +216,12 @@ export const registerUserApi = (data: TRegisterData) =>
     body: JSON.stringify(data)
   })
     .then((res) => checkResponse<TAuthResponse>(res))
-    .then((data) => {
-      if (data?.success) return data;
-      return Promise.reject(data);
+    .then((responseData) => {
+      if (responseData.success) {
+        return responseData;
+      }
+
+      return Promise.reject(responseData);
     });
 
 export type TLoginData = {
@@ -189,9 +238,12 @@ export const loginUserApi = (data: TLoginData) =>
     body: JSON.stringify(data)
   })
     .then((res) => checkResponse<TAuthResponse>(res))
-    .then((data) => {
-      if (data?.success) return data;
-      return Promise.reject(data);
+    .then((responseData) => {
+      if (responseData.success) {
+        return responseData;
+      }
+
+      return Promise.reject(responseData);
     });
 
 export const forgotPasswordApi = (data: { email: string }) =>
@@ -202,10 +254,13 @@ export const forgotPasswordApi = (data: { email: string }) =>
     },
     body: JSON.stringify(data)
   })
-    .then((res) => checkResponse<TServerResponse<{}>>(res))
-    .then((data) => {
-      if (data?.success) return data;
-      return Promise.reject(data);
+    .then((res) => checkResponse<TServerResponse<Record<string, never>>>(res))
+    .then((responseData) => {
+      if (responseData.success) {
+        return responseData;
+      }
+
+      return Promise.reject(responseData);
     });
 
 export const resetPasswordApi = (data: { password: string; token: string }) =>
@@ -216,10 +271,13 @@ export const resetPasswordApi = (data: { password: string; token: string }) =>
     },
     body: JSON.stringify(data)
   })
-    .then((res) => checkResponse<TServerResponse<{}>>(res))
-    .then((data) => {
-      if (data?.success) return data;
-      return Promise.reject(data);
+    .then((res) => checkResponse<TServerResponse<Record<string, never>>>(res))
+    .then((responseData) => {
+      if (responseData.success) {
+        return responseData;
+      }
+
+      return Promise.reject(responseData);
     });
 
 type TUserResponse = TServerResponse<{ user: TUser }>;
@@ -250,4 +308,4 @@ export const logoutApi = () =>
     body: JSON.stringify({
       token: localStorage.getItem('refreshToken')
     })
-  }).then((res) => checkResponse<TServerResponse<{}>>(res));
+  }).then((res) => checkResponse<TServerResponse<Record<string, never>>>(res));

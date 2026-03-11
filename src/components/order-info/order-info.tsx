@@ -1,25 +1,57 @@
-import { FC, useMemo } from 'react';
+import { FC, useEffect, useMemo } from 'react';
+import { useParams } from 'react-router-dom';
+
+import { TIngredient } from '@utils-types';
 import { Preloader } from '../ui/preloader';
 import { OrderInfoUI } from '../ui/order-info';
-import { TIngredient } from '@utils-types';
+import { useDispatch, useSelector } from '../../services/store';
+import {
+  selectIngredients,
+  fetchIngredients
+} from '../../services/slices/ingredientsSlice';
+import {
+  clearCurrentOrder,
+  fetchOrderByNumber,
+  selectCurrentOrder,
+  selectFeedOrders,
+  selectProfileOrders
+} from '../../services/slices/feedsSlice';
 
 export const OrderInfo: FC = () => {
-  /** TODO: взять переменные orderData и ingredients из стора */
-  const orderData = {
-    createdAt: '',
-    ingredients: [],
-    _id: '',
-    status: '',
-    name: '',
-    updatedAt: 'string',
-    number: 0
-  };
+  const dispatch = useDispatch();
+  const { number } = useParams();
 
-  const ingredients: TIngredient[] = [];
+  const ingredients = useSelector(selectIngredients);
+  const currentOrder = useSelector(selectCurrentOrder);
+  const feedOrders = useSelector(selectFeedOrders);
+  const profileOrders = useSelector(selectProfileOrders);
 
-  /* Готовим данные для отображения */
+  const orderNumber = Number(number);
+
+  useEffect(() => {
+    if (!ingredients.length) {
+      dispatch(fetchIngredients());
+    }
+
+    if (!Number.isNaN(orderNumber)) {
+      dispatch(fetchOrderByNumber(orderNumber));
+    }
+
+    return () => {
+      dispatch(clearCurrentOrder());
+    };
+  }, [dispatch, orderNumber]);
+
+  const orderData =
+    currentOrder ||
+    profileOrders.find((item) => item.number === orderNumber) ||
+    feedOrders.find((item) => item.number === orderNumber) ||
+    null;
+
   const orderInfo = useMemo(() => {
-    if (!orderData || !ingredients.length) return null;
+    if (!orderData || !ingredients.length) {
+      return null;
+    }
 
     const date = new Date(orderData.createdAt);
 
@@ -31,6 +63,7 @@ export const OrderInfo: FC = () => {
       (acc: TIngredientsWithCount, item) => {
         if (!acc[item]) {
           const ingredient = ingredients.find((ing) => ing._id === item);
+
           if (ingredient) {
             acc[item] = {
               ...ingredient,
@@ -38,7 +71,7 @@ export const OrderInfo: FC = () => {
             };
           }
         } else {
-          acc[item].count++;
+          acc[item].count += 1;
         }
 
         return acc;
