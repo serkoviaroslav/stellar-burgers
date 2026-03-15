@@ -1,0 +1,13 @@
+{
+  "success": true,
+  "name": "Краторный метеоритный бургер",
+  "order": {
+    "_id": "order-1",
+    "status": "done",
+    "name": "Краторный метеоритный бургер",
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2024-01-01T00:00:00.000Z",
+    "number": 12345,
+    "ingredients": ["bun-1", "main-1", "bun-1"]
+  }
+}
