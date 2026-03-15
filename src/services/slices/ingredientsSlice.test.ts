@@ -1,5 +1,6 @@
 import ingredientsReducer, {
-  fetchIngredients
+  fetchIngredients,
+  initialState
 } from './ingredientsSlice';
 import type { TIngredient } from '@utils-types';
 
@@ -18,12 +19,6 @@ const testIngredients: TIngredient[] = [
     image_mobile: ''
   }
 ];
-
-const initialState = {
-  ingredients: [],
-  isLoading: false,
-  error: null
-};
 
 describe('ingredientsSlice', () => {
   it('должен устанавливать isLoading в true при fetchIngredients.pending', () => {

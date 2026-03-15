@@ -1,4 +1,8 @@
-import orderReducer, { createOrder, clearOrder } from './orderSlice';
+import orderReducer, {
+  createOrder,
+  clearOrder,
+  initialState
+} from './orderSlice';
 import type { TOrder } from '@utils-types';
 
 const testOrder: TOrder = {
@@ -11,18 +15,9 @@ const testOrder: TOrder = {
   ingredients: []
 };
 
-const initialState = {
-  orderRequest: false,
-  orderModalData: null,
-  error: null
-};
-
 describe('orderSlice', () => {
   it('должен устанавливать orderRequest в true при createOrder.pending', () => {
-    const state = orderReducer(
-      initialState,
-      createOrder.pending('', [])
-    );
+    const state = orderReducer(initialState, createOrder.pending('', []));
     expect(state.orderRequest).toBe(true);
     expect(state.error).toBeNull();
     expect(state.orderModalData).toBeNull();
@@ -47,11 +42,7 @@ describe('orderSlice', () => {
   });
 
   it('должен очищать данные заказа при clearOrder', () => {
-    const stateWithOrder = {
-      orderRequest: false,
-      orderModalData: testOrder,
-      error: null
-    };
+    const stateWithOrder = { ...initialState, orderModalData: testOrder };
     const state = orderReducer(stateWithOrder, clearOrder());
     expect(state.orderModalData).toBeNull();
     expect(state.error).toBeNull();

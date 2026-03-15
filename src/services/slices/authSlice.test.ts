@@ -1,16 +1,14 @@
-import authReducer, { loginUser, checkUserAuth, logoutUser } from './authSlice';
+import authReducer, {
+  loginUser,
+  checkUserAuth,
+  logoutUser,
+  initialState
+} from './authSlice';
 import type { TUser } from '@utils-types';
 
 const testUser: TUser = {
   email: 'test@test.com',
   name: 'Test User'
-};
-
-const initialState = {
-  user: null,
-  authRequest: false,
-  isAuthChecked: false,
-  error: null
 };
 
 describe('authSlice', () => {
@@ -36,7 +34,10 @@ describe('authSlice', () => {
   it('должен записывать ошибку при loginUser.rejected', () => {
     const state = authReducer(
       { ...initialState, authRequest: true },
-      loginUser.rejected(new Error('Неверный пароль'), '', { email: '', password: '' })
+      loginUser.rejected(new Error('Неверный пароль'), '', {
+        email: '',
+        password: ''
+      })
     );
     expect(state.authRequest).toBe(false);
     expect(state.error).toBe('Неверный пароль');
@@ -53,7 +54,11 @@ describe('authSlice', () => {
   });
 
   it('должен очищать пользователя при logoutUser.fulfilled', () => {
-    const stateWithUser = { ...initialState, user: testUser, isAuthChecked: true };
+    const stateWithUser = {
+      ...initialState,
+      user: testUser,
+      isAuthChecked: true
+    };
     const state = authReducer(
       stateWithUser,
       logoutUser.fulfilled(undefined, '')

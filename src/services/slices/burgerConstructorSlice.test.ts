@@ -2,7 +2,8 @@ import burgerConstructorReducer, {
   addIngredient,
   removeIngredient,
   moveIngredient,
-  clearConstructor
+  clearConstructor,
+  initialState
 } from './burgerConstructorSlice';
 import type { TConstructorIngredient } from '@utils-types';
 
@@ -51,11 +52,6 @@ const testIngredient2: TConstructorIngredient = {
   image_mobile: ''
 };
 
-const initialState = {
-  bun: null,
-  ingredients: []
-};
-
 describe('burgerConstructorSlice', () => {
   describe('addIngredient', () => {
     it('должен добавлять булку в конструктор', () => {
@@ -80,7 +76,7 @@ describe('burgerConstructorSlice', () => {
   describe('removeIngredient', () => {
     it('должен удалять ингредиент по id', () => {
       const stateWithIngredient = {
-        bun: null,
+        ...initialState,
         ingredients: [testIngredient, testIngredient2]
       };
       const state = burgerConstructorReducer(
@@ -95,7 +91,7 @@ describe('burgerConstructorSlice', () => {
   describe('moveIngredient', () => {
     it('должен менять порядок ингредиентов', () => {
       const stateWithIngredients = {
-        bun: null,
+        ...initialState,
         ingredients: [testIngredient, testIngredient2]
       };
       const state = burgerConstructorReducer(
@@ -108,7 +104,7 @@ describe('burgerConstructorSlice', () => {
 
     it('не должен менять порядок при одинаковых индексах', () => {
       const stateWithIngredients = {
-        bun: null,
+        ...initialState,
         ingredients: [testIngredient, testIngredient2]
       };
       const state = burgerConstructorReducer(
@@ -126,7 +122,10 @@ describe('burgerConstructorSlice', () => {
         bun: testBun,
         ingredients: [testIngredient]
       };
-      const state = burgerConstructorReducer(stateWithItems, clearConstructor());
+      const state = burgerConstructorReducer(
+        stateWithItems,
+        clearConstructor()
+      );
       expect(state.bun).toBeNull();
       expect(state.ingredients).toHaveLength(0);
     });
